@@ -17,24 +17,24 @@
 
 
 # Name of server.jar file
-SERVICE='craftbukkit-0.0.1-SNAPSHOT.jar'
+SERVICE='minecraft_server.jar'
 # User that should run the server
-USERNAME="v"
+USERNAME="martin"
 # Path to minecraft directory 
-MCPATH='/home/v/mine'
+MCPATH='/home/martin/minecraft'
 CPU_COUNT=2
 # Change the values of -Xmx###M and -Xms###M to how much ram you want to give to the
 # server. Remember to give the ramdisk enough space. Subtract from the total amount 
 # of RAM available the size of your map and the RAM-consumption of your base system.
-INVOCATION="java -Xmx760M -Xms760M -XX:+UseConcMarkSweepGC -XX:+CMSIncrementalPacing -XX:ParallelGCThreads=$CPU_COUNT -XX:+AggressiveOpts -jar $SERVICE nogui"
+INVOCATION="java -Xmx1024M -Xms1024M -XX:+UseConcMarkSweepGC -XX:+CMSIncrementalPacing -XX:ParallelGCThreads=$CPU_COUNT -XX:+AggressiveOpts -jar $SERVICE nogui"
 # Where the world backups should go
-BACKUPPATH='/home/v/minebak'
+BACKUP_PATH="${MCPATH}/backups"
 # Where the logs are copied when running log-roll 
 LOGPATH="${MCPATH}/logs"
-# Where the whole minecraft directory is copied when whole-backup is runned
-WHOLEBACKUP='/home/v/serverbak'
+# Name of the world in the server.properties file
+WORLD='Crazy-Awesome'
 # Where the world is located on the disk
-WORLDSTORAGE='/home/v/mine/diskworld'
+WORLD_STORAGE="${MCPATH}/disk-$WORLD"
 #Path to the the mounted ramdisk default in Ubuntu: /dev/shm
 RAMDISK='/dev/shm'
 
@@ -62,7 +62,7 @@ mc_start() {
 		echo "Tried to start but $SERVICE was already running!"
 	else
 		echo "$SERVICE was not running... starting."
-		# rsync -tr $MCPATH/world-disc /dev/shm/
+		
 		cd $MCPATH
 		as_user "cd $MCPATH && screen -dmS minecraft $INVOCATION"
 		sleep 7
@@ -117,27 +117,28 @@ mc_stop() {
 	fi
 }
 log_roll() {
-	path=`datepath $MCPATH/logs/server_ .log.gz .log`
-	as_user "mv $MCPATH/server.log $path && gzip $path"
-}
-mc_whole_backup() {
-	path=`datepath $WHOLEBACKUP/mine_`
-	as_user "cp -r $MCPATH $path"
+	as_user "mv $MCPATH/server.log $BACKUP_PATH && bzip2 $path"
 }
 mc_world_backup() {
-	echo "Backing up minecraft world"
-	path=`datepath $BACKUPPATH/world_ .tar.bz2 .tar.bz2`
-	as_user "tar -hcjf $path $MCPATH/world"
+        if [ ! -d $BACKUPPATH ] ; then
+            mkdir $BACKUPPATH
+        fi
+        echo "Backing up minecraft $WORLD..."
+        as_user "cd $MCPATH && tar hjcf $BACKUPPATH/$WORLD-`date '+%Y-%m-%d-%H%M'`.tar.bz2 $WORLD"
+        echo "Backed up $WORLD"
+        echo "Backing up the minecraft server executable..."
+        as_user "cd $MCPATH && cp minecraft_server.jar $BACKUPPATH/minecraft_server-`date '+%Y-%m-%d-%H%M'`.jar"
+        echo "Backed up minecraft server executable."
 }
 to_ram() {
 	if [ -L $MCPATH/world ]
 	then
-		as_user "rsync -rt $WORLDSTORAGE/ $RAMDISK/world"
+		as_user "rsync -rt $WORLD_STORAGE/ $RAMDISK/$WORLD"
 		echo "World copied to ram"
 	fi
 }
 to_disk() {
-	as_user "rsync -rt $MCPATH/world/ $WORLDSTORAGE"
+	as_user "rsync -rt $RAMDISK/$WORLD $WORLD_STORAGE"
 	echo "World copied to disk"
 }
 
@@ -160,16 +161,12 @@ case "$1" in
 		mc_start
 		;;
 	backup)
-		# Backups world
+		# Backups world and minecraft server jar
 		as_user "screen -p 0 -S minecraft -X eval 'stuff \"say Backing up world.\"\015'"
 		mc_saveoff
 		mc_world_backup
 		mc_saveon
 		as_user "screen -p 0 -S minecraft -X eval 'stuff \"say Backup complete.\"\015'"
-		;;
-	whole-backup)
-		# Backups everything
-		mc_whole_backup
 		;;
 	to-disk)
 		# Writes from the ramdisk to disk, in case the server crashes. 
@@ -186,7 +183,7 @@ case "$1" in
 		tac $MCPATH/server.log | grep -m 1 "Connected"
 		;;
 	log-roll)
-		# Moves and Gzips the logfile, a big log file slows down the
+		# Moves and bzip2 compresses the logfile, a big log file slows down the
 		# server A LOT (what was notch thinking?)
 		as_user "screen -p 0 -S minecraft -X eval 'stuff \"say ROUTINE REBOOT IN 10 SECONDS.\"\015'"
 		mc_stop
