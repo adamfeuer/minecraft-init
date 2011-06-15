@@ -30,7 +30,7 @@ INVOCATION="java -Xmx1024M -Xms1024M -XX:+UseConcMarkSweepGC -XX:+CMSIncremental
 # Where the world backups should go
 BACKUP_PATH="${MCPATH}/backups"
 # Where the logs are copied when running log-roll 
-LOGPATH="${MCPATH}/logs"
+LOGPATH=$BACKUP_PATH
 # Name of the world in the server.properties file
 WORLD='Crazy-Awesome'
 # Where the world is located on the disk
@@ -117,23 +117,25 @@ mc_stop() {
 	fi
 }
 log_roll() {
-	as_user "mv $MCPATH/server.log $BACKUP_PATH && bzip2 $path"
+        LOGFILE="server-`date '+%Y-%m-%d-%H%M'`.log" 
+	as_user "mv $MCPATH/server.log $LOGPATH/$LOGFILE && bzip2 $LOGPATH/$LOGFILE"
+        echo "Server log files have been moved to $LOGPATH/$LOGFILE."
 }
 mc_world_backup() {
-        if [ ! -d $BACKUPPATH ] ; then
-            mkdir $BACKUPPATH
+        if [ ! -d $BACKUP_PATH ] ; then
+            mkdir $BACKUP_PATH
         fi
-        echo "Backing up minecraft $WORLD..."
-        as_user "cd $MCPATH && tar hjcf $BACKUPPATH/$WORLD-`date '+%Y-%m-%d-%H%M'`.tar.bz2 $WORLD"
+        echo "Backing up minecraft world $WORLD..."
+        as_user "cd $MCPATH && tar hjcf $BACKUP_PATH/$WORLD-`date '+%Y-%m-%d-%H%M'`.tar.bz2 $WORLD"
         echo "Backed up $WORLD"
         echo "Backing up the minecraft server executable..."
-        as_user "cd $MCPATH && cp minecraft_server.jar $BACKUPPATH/minecraft_server-`date '+%Y-%m-%d-%H%M'`.jar"
+        as_user "cd $MCPATH && cp minecraft_server.jar $BACKUP_PATH/minecraft_server-`date '+%Y-%m-%d-%H%M'`.jar"
         echo "Backed up minecraft server executable."
 }
 to_ram() {
-	if [ -L $MCPATH/world ]
+	if [ -L $MCPATH/$WORLD ]
 	then
-		as_user "rsync -rt $WORLD_STORAGE/ $RAMDISK/$WORLD"
+		as_user "rsync -rt $WORLD_STORAGE/ $MCPATH/$WORLD"
 		echo "World copied to ram"
 	fi
 }
