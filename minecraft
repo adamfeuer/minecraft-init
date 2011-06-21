@@ -133,9 +133,13 @@ mc_world_backup() {
         echo "Backed up minecraft server executable."
 }
 to_ram() {
+        if [ ! -d $RAMDISK/$WORLD ] ; then
+           mkdir $RAMDISK/$WORLD
+           chown martin:martin $RAMDISK/$WORLD 
+        fi
 	if [ -L $MCPATH/$WORLD ]
 	then
-		as_user "rsync -rt $WORLD_STORAGE/ $MCPATH/$WORLD"
+		as_user "rsync -rt $WORLD_STORAGE/ $MCPATH/$WORLD/"
 		echo "World copied to ram"
 	fi
 }
@@ -203,7 +207,7 @@ case "$1" in
 		;;
 
 	*)
-		echo "Usage: /etc/init.d/minecraft {start|stop|backup|whole-backup|log-roll|to-disk|connected|status|restart}"
+		echo "Usage: /etc/init.d/minecraft {start|stop|backup|log-roll|to-disk|connected|status|restart}"
 		exit 1
 		;;
 esac
