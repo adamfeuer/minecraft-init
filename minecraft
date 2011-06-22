@@ -41,89 +41,90 @@ RAMDISK='/dev/shm'
 
 ME=`whoami`
 as_user() {
-	if [ $ME == $USERNAME ] ; then
-		bash -c "$1"
-	else
-		su - $USERNAME -c "$1"
-	fi
+if [ $ME == $USERNAME ] ; then
+	bash -c "$1"
+else
+	su - $USERNAME -c "$1"
+fi
 }
 datepath() {
-	# datepath path filending-to-check returned-filending
-	if [ -e $1`date +%x`$2 ]
-	then
-		echo $1`date +%FT%T`$3
-	else
-		echo $1`date +%F`$3
-	fi
+# datepath path filending-to-check returned-filending
+if [ -e $1`date +%x`$2 ]
+then
+	echo $1`date +%FT%T`$3
+else
+	echo $1`date +%F`$3
+fi
 }
 mc_start() {
+if ps ax | grep -v grep | grep -v -i SCREEN | grep $SERVICE > /dev/null
+then
+	echo "Tried to start but $SERVICE was already running!"
+else
+	echo "$SERVICE was not running... starting."
+	
+	cd $MCPATH
+	as_user "cd $MCPATH && screen -dmS minecraft $INVOCATION"
+	sleep 7
 	if ps ax | grep -v grep | grep -v -i SCREEN | grep $SERVICE > /dev/null
 	then
-		echo "Tried to start but $SERVICE was already running!"
+		echo "$SERVICE is now running."
 	else
-		echo "$SERVICE was not running... starting."
-		
-		cd $MCPATH
-		as_user "cd $MCPATH && screen -dmS minecraft $INVOCATION"
-		sleep 7
-		if ps ax | grep -v grep | grep -v -i SCREEN | grep $SERVICE > /dev/null
-		then
-			echo "$SERVICE is now running."
-		else
-			echo "Could not start $SERVICE."
-		fi
+		echo "Could not start $SERVICE."
 	fi
+fi
 }
 
 mc_saveoff() {
-	if ps ax | grep -v grep | grep -v -i SCREEN | grep $SERVICE > /dev/null
-	then
-		echo "$SERVICE is running... suspending saves"
-		as_user "screen -p 0 -S minecraft -X eval 'stuff \"save-off\"\015'"
-		as_user "screen -p 0 -S minecraft -X eval 'stuff \"save-all\"\015'"
-		sync
-		sleep 10
-	else
-		echo "$SERVICE was not running. Not suspending saves."
-	fi
+if ps ax | grep -v grep | grep -v -i SCREEN | grep $SERVICE > /dev/null
+then
+	echo "$SERVICE is running... suspending saves"
+	as_user "screen -p 0 -S minecraft -X eval 'stuff \"save-off\"\015'"
+	as_user "screen -p 0 -S minecraft -X eval 'stuff \"save-all\"\015'"
+	sync
+	sleep 10
+else
+	echo "$SERVICE was not running. Not suspending saves."
+fi
 }
 
 mc_saveon() {
-	if ps ax | grep -v grep | grep -v -i SCREEN | grep $SERVICE > /dev/null
-	then
-		echo "$SERVICE is running... re-enabling saves"
-		as_user "screen -p 0 -S minecraft -X eval 'stuff \"save-on\"\015'"
-	else
-		echo "$SERVICE was not running. Not resuming saves."
-	fi
+if ps ax | grep -v grep | grep -v -i SCREEN | grep $SERVICE > /dev/null
+then
+	echo "$SERVICE is running... re-enabling saves"
+	as_user "screen -p 0 -S minecraft -X eval 'stuff \"save-on\"\015'"
+else
+	echo "$SERVICE was not running. Not resuming saves."
+fi
 }
 
 mc_stop() {
-	if ps ax | grep -v grep | grep -v -i SCREEN | grep $SERVICE > /dev/null
-	then
-		echo "$SERVICE is running... stopping."
-		as_user "screen -p 0 -S minecraft -X eval 'stuff \"save-all\"\015'"
-		sleep 10
-		as_user "screen -p 0 -S minecraft -X eval 'stuff \"stop\"\015'"
-		sleep 7
-	else
-		echo "$SERVICE was not running."
-	fi
-	if ps ax | grep -v grep | grep -v -i SCREEN | grep $SERVICE > /dev/null
-	then
-		echo "$SERVICE could not be shut down... still running."
-	else
-		echo "$SERVICE is shut down."
-	fi
+if ps ax | grep -v grep | grep -v -i SCREEN | grep $SERVICE > /dev/null
+then
+	echo "$SERVICE is running... stopping."
+	as_user "screen -p 0 -S minecraft -X eval 'stuff \"save-all\"\015'"
+	sleep 10
+	as_user "screen -p 0 -S minecraft -X eval 'stuff \"stop\"\015'"
+	sleep 7
+else
+	echo "$SERVICE was not running."
+fi
+if ps ax | grep -v grep | grep -v -i SCREEN | grep $SERVICE > /dev/null
+then
+	echo "$SERVICE could not be shut down... still running."
+else
+	echo "$SERVICE is shut down."
+fi
 }
 log_roll() {
-        LOGFILE="server-`date '+%Y-%m-%d-%H%M'`.log" 
-	as_user "mv $MCPATH/server.log $LOGPATH/$LOGFILE && bzip2 $LOGPATH/$LOGFILE"
-        echo "Server log files have been moved to $LOGPATH/$LOGFILE."
+LOGFILE="server-`date '+%Y-%m-%d-%H%M'`.log" 
+as_user "mv $MCPATH/server.log $LOGPATH/$LOGFILE && bzip2 $LOGPATH/$LOGFILE"
+echo "Server log files have been moved to $LOGPATH/$LOGFILE."
 }
 mc_world_backup() {
-        if [ ! -d $BACKUP_PATH ] ; then
-            mkdir $BACKUP_PATH
+if [ ! -d $BACKUP_PATH ] ; then
+    mkdir $BACKUP_PATH
+    chown $USERNAME:$USERNAME $BACKUP_PATH
         fi
         echo "Backing up minecraft world $WORLD..."
         as_user "cd $MCPATH && tar hjcf $BACKUP_PATH/$WORLD-`date '+%Y-%m-%d-%H%M'`.tar.bz2 $WORLD"
@@ -135,7 +136,7 @@ mc_world_backup() {
 to_ram() {
         if [ ! -d $RAMDISK/$WORLD ] ; then
            mkdir $RAMDISK/$WORLD
-           chown martin:martin $RAMDISK/$WORLD 
+           chown $USERNAME:$USERNAME $RAMDISK/$WORLD 
         fi
 	if [ -L $MCPATH/$WORLD ]
 	then
