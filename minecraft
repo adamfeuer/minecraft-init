@@ -145,7 +145,7 @@ to_ram() {
 	fi
 }
 to_disk() {
-	as_user "rsync -rt $RAMDISK/$WORLD $WORLD_STORAGE"
+	as_user "rsync -rt $MCPATH/$WORLD/ $WORLD_STORAGE/"
 	echo "World copied to disk"
 }
 
