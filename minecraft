@@ -34,7 +34,8 @@ LOGPATH=$BACKUP_PATH
 # Name of the world in the server.properties file
 WORLD='Crazy-Awesome'
 # Where the world is located on the disk
-WORLD_STORAGE="${MCPATH}/disk-$WORLD"
+DISK_WORLD="disk-$WORLD"
+WORLD_STORAGE="${MCPATH}/$DISK_WORLD"
 #Path to the the mounted ramdisk default in Ubuntu: /dev/shm
 RAMDISK='/dev/shm'
 
@@ -121,14 +122,15 @@ LOGFILE="server-`date '+%Y-%m-%d-%H%M'`.log"
 as_user "mv $MCPATH/server.log $LOGPATH/$LOGFILE && bzip2 $LOGPATH/$LOGFILE"
 echo "Server log files have been moved to $LOGPATH/$LOGFILE."
 }
+
 mc_world_backup() {
 if [ ! -d $BACKUP_PATH ] ; then
     mkdir $BACKUP_PATH
     chown $USERNAME:$USERNAME $BACKUP_PATH
         fi
         echo "Backing up minecraft world $WORLD..."
-        as_user "cd $MCPATH && tar hjcf $BACKUP_PATH/$WORLD-`date '+%Y-%m-%d-%H%M'`.tar.bz2 $WORLD"
-        echo "Backed up $WORLD"
+        as_user "cd $MCPATH && tar hjcf $BACKUP_PATH/$DISK_WORLD-`date '+%Y-%m-%d-%H%M'`.tar.bz2 $WORLD_STORAGE"
+        echo "Backed up $WORLD_STORAGE"
         echo "Backing up the minecraft server executable..."
         as_user "cd $MCPATH && cp minecraft_server.jar $BACKUP_PATH/minecraft_server-`date '+%Y-%m-%d-%H%M'`.jar"
         echo "Backed up minecraft server executable."
@@ -171,6 +173,7 @@ case "$1" in
 		# Backups world and minecraft server jar
 		as_user "screen -p 0 -S minecraft -X eval 'stuff \"say Backing up world.\"\015'"
 		mc_saveoff
+                to_disk
 		mc_world_backup
 		mc_saveon
 		as_user "screen -p 0 -S minecraft -X eval 'stuff \"say Backup complete.\"\015'"
