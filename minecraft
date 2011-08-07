@@ -129,7 +129,7 @@ if [ ! -d $BACKUP_PATH ] ; then
     chown $USERNAME:$USERNAME $BACKUP_PATH
         fi
         echo "Backing up minecraft world $WORLD..."
-        as_user "cd $MCPATH && tar hjcf $BACKUP_PATH/$DISK_WORLD-`date '+%Y-%m-%d-%H%M'`.tar.bz2 $WORLD_STORAGE"
+        as_user "cd $MCPATH && tar hjcf $BACKUP_PATH/$DISK_WORLD-`date '+%Y-%m-%d-%H%M'`.tar.bz2 $DISK_WORLD"
         echo "Backed up $WORLD_STORAGE"
         echo "Backing up the minecraft server executable..."
         as_user "cd $MCPATH && cp minecraft_server.jar $BACKUP_PATH/minecraft_server-`date '+%Y-%m-%d-%H%M'`.jar"
