@@ -20,6 +20,8 @@
 SERVICE='minecraft_server.jar'
 # User that should run the server
 USERNAME="martin"
+# Group that backup group is set to
+GROUP="users"
 # Path to minecraft directory 
 MCPATH='/home/martin/minecraft'
 CPU_COUNT=2
@@ -37,7 +39,7 @@ WORLD='Crazy-Awesome'
 DISK_WORLD="disk-$WORLD"
 WORLD_STORAGE="${MCPATH}/$DISK_WORLD"
 #Path to the the mounted ramdisk default in Ubuntu: /dev/shm
-RAMDISK='/dev/shm'
+RAMDISK='/var/ramdisk'
 
 
 ME=`whoami`
@@ -126,13 +128,17 @@ echo "Server log files have been moved to $LOGPATH/$LOGFILE."
 mc_world_backup() {
 if [ ! -d $BACKUP_PATH ] ; then
     mkdir $BACKUP_PATH
-    chown $USERNAME:$USERNAME $BACKUP_PATH
+    chown $USERNAME:$GROUP $BACKUP_PATH
         fi
         echo "Backing up minecraft world $WORLD..."
-        as_user "cd $MCPATH && tar hjcf $BACKUP_PATH/$DISK_WORLD-`date '+%Y-%m-%d-%H%M'`.tar.bz2 $DISK_WORLD"
+        TARFILE="$BACKUP_PATH/$DISK_WORLD-`date '+%Y-%m-%d-%H%M'`.tar.bz2"
+        as_user "cd $MCPATH && tar hjcf $TARFILE $DISK_WORLD"
+        chown $USERNAME:$GROUP $TARFILE
         echo "Backed up $WORLD_STORAGE"
         echo "Backing up the minecraft server executable..."
-        as_user "cd $MCPATH && cp minecraft_server.jar $BACKUP_PATH/minecraft_server-`date '+%Y-%m-%d-%H%M'`.jar"
+        JARFILE="$BACKUP_PATH/minecraft_server-`date '+%Y-%m-%d-%H%M'`.jar"
+        as_user "cd $MCPATH && cp minecraft_server.jar $JARFILE"
+        chown $USERNAME:$GROUP $JARFILE
         echo "Backed up minecraft server executable."
 }
 to_ram() {

@@ -31,12 +31,12 @@ Setup
 		chmod 755 /etc/init.d/minecraft
 		update-rc.d minecraft defaults
 
-2. Mount a ramdisk or use the one premounted at `/dev/shm/`
+2. Mount a ramdisk or use the one premounted at `/dev/shm/`. Note that the /dev/shm ramdisk can cause problems if it fills up; a ramdisk of a fixed size will not have this problem.
 
-3. Rename your world dir to diskworld and symlink the ramdisk in instead.
+3. Rename your world dir to disk-world and symlink the ramdisk in instead. (If your world is not named 'world', change the lines below appropriately.)
 
 		cd ~/minecraft
-		mv world diskworld
+		mv world disk-world
 		ln -s /dev/shm/world world
 
 4. Create the log directory
